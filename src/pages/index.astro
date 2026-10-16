@@ -1,9 +1,71 @@
 ---
+import { Image } from "astro:assets";
 import Base from "../layouts/Base.astro";
-import { site } from "../content/site";
+import Hero from "../components/Hero.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import FullBleedSection from "../components/FullBleedSection.astro";
+import ServiceCard from "../components/ServiceCard.astro";
+import Stats from "../components/Stats.astro";
 import FAQ from "../components/FAQ.astro";
+import ContactCTA from "../components/ContactCTA.astro";
+import { site } from "../content/site";
 
-// TODO(setup): Q11 トップページ — 強み3つ / 提供内容 / 行動喚起（CTA）
+// TODO(setup): Q10 写真 — src/assets/images/ の仮の写真を差し替える（alt も内容に合わせる）
+import heroImage from "../assets/images/hero.png";
+import conceptImage from "../assets/images/concept.png";
+import reasonsImage from "../assets/images/reasons.png";
+
+// TODO(setup): Q11 トップページ — ヒーローの補足文 / 想い / 選ばれる理由3つ / 提供しているもの
+const heroSub = "ひとことで伝わる、サイトの補足文をここに書きます。";
+
+const concept = {
+  title: "私たちの想い",
+  paragraphs: [
+    "はじめた理由や、お客様に約束していることをここに書きます。2〜3段落あると、縦書きの見出しと釣り合います。",
+    "どんな方に、どんな時間や価値を届けたいのか。言葉を選んで、短く書きます。",
+  ],
+};
+
+const reasons = [
+  { number: "01", title: "強み1 — ひとことで" },
+  { number: "02", title: "強み2 — ひとことで" },
+  { number: "03", title: "強み3 — ひとことで" },
+];
+
+const services = [
+  {
+    kanji: "壱",
+    en: "Service 01",
+    name: "サービス・商品1",
+    label: "対象や価格帯など",
+    summary: "どんな方に、何を提供するのかを1〜2文で書きます。",
+    image: heroImage,
+  },
+  {
+    kanji: "弐",
+    en: "Service 02",
+    name: "サービス・商品2",
+    label: "対象や価格帯など",
+    summary: "どんな方に、何を提供するのかを1〜2文で書きます。",
+    image: conceptImage,
+  },
+  {
+    kanji: "参",
+    en: "Service 03",
+    name: "サービス・商品3",
+    label: "対象や価格帯など",
+    summary: "どんな方に、何を提供するのかを1〜2文で書きます。",
+    image: reasonsImage,
+  },
+];
+
+// TODO(setup): Q11 数字で見る — 利用者から聞いた実数だけを入れる。無ければセクションごと削除
+const stats = [
+  { label: "創業から", value: 10, unit: "年" },
+  { label: "ご利用者数", value: 1200, unit: "名" },
+  { label: "スタッフ", value: 8, unit: "名" },
+];
+
 // TODO(setup): Q12 よくある質問（不要なら FAQ ごと削除）
 const faqs = [
   {
@@ -14,32 +76,246 @@ const faqs = [
     q: "よくある質問2",
     a: "回答をここに書きます。",
   },
+  {
+    q: "よくある質問3",
+    a: "回答をここに書きます。",
+  },
 ];
 ---
 
-<Base description={site.description} canonicalPath="/">
-  <article class="prose">
-    <h1>{site.tagline}</h1>
-    <p class="lead">{site.description}</p>
+<Base description={site.description} canonicalPath="/" hero>
+  <Hero image={heroImage} alt="" sub={heroSub} />
 
-    <section>
-      <h2>選ばれる理由</h2>
-      <ul>
-        <li><strong>強み1</strong> — 具体的な説明。</li>
-        <li><strong>強み2</strong> — 具体的な説明。</li>
-        <li><strong>強み3</strong> — 具体的な説明。</li>
+  {/* 01 Concept */}
+  <section class="section concept" id="concept">
+    <div class="concept__container">
+      <div class="concept__inner">
+        <div class="concept__text-col">
+          <SectionHeading
+            kanji="想"
+            en="Concept"
+            index="01"
+            label={concept.title}
+          />
+
+          <div class="concept__content">
+            <h3 class="vertical-text fade-in stagger-2">{concept.title}</h3>
+            <div class="concept__desc fade-in stagger-3">
+              {concept.paragraphs.map((p) => <p>{p}</p>)}
+            </div>
+          </div>
+
+          <div class="concept__action fade-in stagger-4">
+            <a href="/about" class="more-link">
+              <span class="more-link__text">View More</span>
+              <span class="more-link__arrow" aria-hidden="true">→</span>
+              <span class="sr-only">（私たちについて）</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="concept__img-col mask-reveal">
+          <Image
+            src={conceptImage}
+            alt=""
+            class="concept__img"
+            widths={[640, 1280]}
+            sizes="(max-width: 1024px) 100vw, 55vw"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* 02 Reasons (FullBleed) */}
+  <FullBleedSection
+    image={reasonsImage}
+    kanji="選"
+    en="Reasons"
+    label="選ばれる理由"
+    largeText="Reasons"
+    index="02"
+  >
+    <div class="reasons">
+      <h3 class="reasons__title">私たちが選ばれる理由</h3>
+      <ul class="reasons__list">
+        {
+          reasons.map((item) => (
+            <li class="reasons__item fade-in">
+              <span class="reasons__num">{item.number}.</span>
+              <span class="reasons__text">{item.title}</span>
+            </li>
+          ))
+        }
       </ul>
-    </section>
+      <div class="reasons__action fade-in">
+        <a href="/about" class="btn btn--outline-light">
+          詳しく見る<span class="btn__arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </FullBleedSection>
 
-    <section>
-      <h2>提供しているもの</h2>
-      <p>商品・サービス・メニューの概要をここに書きます。</p>
-    </section>
+  {/* 03 Services */}
+  <section class="section services" id="services">
+    <div class="container-page">
+      <SectionHeading
+        kanji="品"
+        en="Services"
+        index="03"
+        label="提供しているもの"
+      />
 
-    <p>
-      <a href="/contact">お問い合わせはこちら</a>
-    </p>
-  </article>
+      <div class="services__grid">
+        {
+          services.map((service, index) => (
+            <div class={`fade-in stagger-${(index % 3) + 1}`}>
+              <ServiceCard {...service} />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
 
-  <FAQ items={faqs} />
+  {/* 04 Numbers */}
+  <section class="section numbers" id="numbers">
+    <div class="container-page numbers__container">
+      <SectionHeading kanji="数" en="Numbers" index="04" label="数字で見る" />
+      <div class="fade-in stagger-2">
+        <Stats items={stats} label={`数字で見る${site.name}`} />
+      </div>
+    </div>
+  </section>
+
+  {/* 05 FAQ */}
+  <FAQ items={faqs} index="05" />
+
+  <ContactCTA />
 </Base>
+
+<style>
+  /* Concept — 写真を右端まで裁ち落とすため、左だけ余白を持つ */
+  .concept__container {
+    max-width: 1400px;
+    margin-inline: auto;
+  }
+
+  .concept__inner {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .concept__text-col {
+    padding-left: var(--section-padding-x);
+  }
+
+  .concept__content {
+    display: flex;
+    gap: 4rem;
+    margin-bottom: 3rem;
+  }
+
+  .concept__desc {
+    font-size: 1.05rem;
+    line-height: 2;
+  }
+
+  .concept__desc p {
+    margin-bottom: 1.5rem;
+  }
+
+  .concept__img-col {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+  }
+
+  .concept__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Reasons (inside FullBleed) */
+  .reasons__title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .reasons__list {
+    margin-bottom: 3rem;
+  }
+
+  .reasons__item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.2rem 0;
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--color-on-dark) 20%, transparent);
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .reasons__num {
+    font-family: var(--font-en);
+    font-size: 1.5rem;
+    color: var(--color-cta);
+  }
+
+  /* Services */
+  .services {
+    background-color: var(--color-surface);
+  }
+
+  .services__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  /* Numbers */
+  .numbers__container {
+    max-width: 1000px;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .services__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .concept__inner {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+
+    .concept__text-col {
+      padding-right: var(--section-padding-x);
+    }
+
+    .concept__img-col {
+      min-height: 400px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .concept__content {
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .vertical-text {
+      writing-mode: horizontal-tb;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .services__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

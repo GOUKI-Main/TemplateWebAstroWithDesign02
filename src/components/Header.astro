@@ -1,61 +1,546 @@
 ---
-import { site, type SiteNavItem } from "../content/site";
-import NavLinks from "./NavLinks.astro";
+import { site } from "../content/site";
 
-const { brand = site.name, nav = site.nav } = Astro.props as {
-  brand?: string;
-  nav?: SiteNavItem[];
-};
+// Header nav = site.nav without home (the logo already links there). Active
+// state is derived from the current path, not passed in.
+const items = site.nav.filter((item) => item.href !== "/");
+const path = Astro.url.pathname;
+const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
 ---
 
 {
-  /* sticky (not fixed) so the header keeps its own space in the flow — no
-     magic top padding on <main>. bg + z keep scrolled content from showing
-     through, and `sticky` is the positioned ancestor the mobile menu panel
-     anchors to. */
+  /* position: fixed — the header floats over the hero photo (transparent,
+     light text) and turns dark once the page scrolls. Pages without a hero
+     get <body data-header="light">, which starts it with dark text instead.
+     The scroll state, hide-on-scroll-down, the progress bar and the mobile
+     menu are driven by the script at the bottom (GSAP ScrollTrigger). */
 }
-<header class="sticky top-0 z-40 w-full border-b border-border bg-bg">
-  <div class="container-page flex items-center justify-between gap-4 py-4">
-    <a class="tap-target font-bold tracking-tight no-underline" href="/"
-      >{brand}</a
+<header class="header js-header">
+  <div class="header__inner">
+    <a href="/" class="header__logo">
+      <span class="header__logo-kanji" aria-hidden="true">{site.brandMark}</span
+      >
+      <span class="header__logo-text">
+        <span class="header__logo-en" aria-hidden="true">{site.nameEn}</span>
+        <span class="header__logo-ja">{site.name}</span>
+      </span>
+    </a>
+
+    <nav
+      id="site-nav"
+      class="header__nav js-nav"
+      aria-label="主要ナビゲーション"
     >
-
-    {
-      /* One landmark, two renderings: a disclosure on small screens and an
-         inline row from md up. <details> gives an accessible, keyboard-
-         operable menu with zero JavaScript; navigating reloads the page,
-         which closes it. */
-    }
-    <nav aria-label="主要ナビゲーション">
-      <details class="md:hidden">
+      <ul class="header__nav-list">
         {
-          /* list-none + marker:content-[''] look redundant next to
-             tap-target's `display: inline-flex` (which removes the marker box
-             outright) — they are the fallback if that display is ever
-             overridden, which is cheap insurance for the site's only
-             JavaScript-free navigation control. */
+          items.map((item) => (
+            <li class="header__nav-item">
+              <a
+                href={item.href}
+                class="header__nav-link"
+                aria-current={isActive(item.href) ? "page" : undefined}
+              >
+                {item.labelEn && (
+                  <span class="header__nav-en" aria-hidden="true">
+                    {item.labelEn}
+                  </span>
+                )}
+                <span class="header__nav-ja">{item.label}</span>
+              </a>
+            </li>
+          ))
         }
-        <summary
-          class="tap-target cursor-pointer list-none rounded-lg border border-border px-3 text-sm marker:content-['']"
-        >
-          メニュー
-        </summary>
-        {
-          /* max-height so a long nav scrolls inside the panel instead of
-            running off a short (or landscape) phone screen. */
-        }
-        <div
-          class="absolute inset-x-0 top-full max-h-[75dvh] overflow-y-auto overscroll-contain border-b border-border bg-bg"
-        >
-          <div class="container-page py-2">
-            <NavLinks items={nav} block />
-          </div>
-        </div>
-      </details>
-
-      <div class="hidden md:block">
-        <NavLinks items={nav} />
-      </div>
+      </ul>
+      <a href={site.cta.href} class="header__cta">
+        {site.cta.labelEn ?? site.cta.label}
+        {site.cta.labelEn && <span class="sr-only">（{site.cta.label}）</span>}
+      </a>
     </nav>
+
+    <button
+      type="button"
+      class="header__hamburger js-hamburger"
+      aria-label="メニュー"
+      aria-controls="site-nav"
+      aria-expanded="false"
+    >
+      <span class="header__hamburger-box" aria-hidden="true">
+        <span class="header__hamburger-line"></span>
+        <span class="header__hamburger-line"></span>
+        <span class="header__hamburger-line"></span>
+      </span>
+    </button>
   </div>
+
+  {/* スクロール進捗バー。GSAP が scaleX を 0 → 1 に連動させる */}
+  <span class="header__progress" aria-hidden="true"
+    ><i class="js-progress"></i></span
+  >
 </header>
+
+<style>
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    padding: 1.5rem 0;
+    transition:
+      background-color 0.4s ease,
+      padding 0.4s ease,
+      transform 0.45s var(--ease-out),
+      border-bottom 0.4s ease;
+    border-bottom: 1px solid transparent;
+  }
+
+  .header.is-scrolled {
+    background-color: var(--color-dark);
+    padding: 1rem 0;
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--color-on-dark) 10%, transparent);
+  }
+
+  /* 下方向スクロール時に隠す（メニュー展開中・最上部では付かない） */
+  .header.is-hidden {
+    transform: translateY(-100%);
+  }
+
+  /* 暗い面の上ではフォーカスリングを明色に */
+  .header.is-scrolled :focus-visible,
+  :global(body:not([data-header="light"])) .header :focus-visible,
+  .header__nav.is-open :focus-visible {
+    outline-color: var(--color-cta);
+  }
+
+  /* --- スクロール進捗バー --- */
+  .header__progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 1px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .header__progress i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-accent-light);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  .header__inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--section-padding-x);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header__logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+    color: var(--color-on-dark);
+    text-decoration: none;
+    transition: color 0.4s ease;
+  }
+
+  .header__logo-kanji {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .header__logo-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .header__logo-en {
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    opacity: 0.8;
+  }
+
+  .header__logo-ja {
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* Desktop Nav */
+  .header__nav {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .header__nav-list {
+    display: flex;
+    gap: 2.5rem;
+  }
+
+  .header__nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--color-on-dark);
+    text-decoration: none;
+    position: relative;
+    padding-bottom: 0.3rem;
+  }
+
+  .header__nav-link::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s ease;
+  }
+
+  .header__nav-link:hover::after,
+  .header__nav-link[aria-current="page"]::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .header__nav-en {
+    font-family: var(--font-en);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+  }
+
+  .header__nav-ja {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-top: 0.2rem;
+  }
+
+  .header__cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    background-color: transparent;
+    color: var(--color-on-dark);
+    border: 1px solid color-mix(in srgb, var(--color-on-dark) 30%, transparent);
+    border-radius: 50px;
+    padding: 0.7rem 2rem;
+    font-family: var(--font-en);
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    transition: all 0.3s ease;
+  }
+
+  .header__cta:hover {
+    background-color: var(--color-on-dark);
+    color: var(--color-fg);
+  }
+
+  /* Mobile Hamburger — 44px の押せる箱の中に 30×20 の三本線 */
+  .header__hamburger {
+    display: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 101;
+  }
+
+  .header__hamburger-box {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 20px;
+  }
+
+  .header__hamburger-line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--color-on-dark);
+    transition: all 0.3s ease;
+  }
+
+  .header__hamburger-line:nth-child(1) {
+    top: 0;
+  }
+  .header__hamburger-line:nth-child(2) {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .header__hamburger-line:nth-child(3) {
+    bottom: 0;
+  }
+
+  /* Mobile Nav Overrides */
+  @media (max-width: 900px) {
+    /* パネルの開閉は GSAP タイムラインが所有するため CSS transition は持たせない。
+       JS が動かない場合に備え、.is-open が付けば CSS だけでも開ける状態にしておく */
+    .header__nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow-y: auto;
+      background-color: var(--color-dark);
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .header__nav.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .header__nav-list {
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .header__hamburger {
+      display: grid;
+    }
+
+    .header__hamburger.is-active .header__hamburger-line:nth-child(1) {
+      top: 50%;
+      transform: translateY(-50%) rotate(45deg);
+    }
+    .header__hamburger.is-active .header__hamburger-line:nth-child(2) {
+      opacity: 0;
+    }
+    .header__hamburger.is-active .header__hamburger-line:nth-child(3) {
+      bottom: 50%;
+      transform: translateY(50%) rotate(-45deg);
+    }
+  }
+
+  /* Inverse header for pages without a dark hero */
+  :global([data-header="light"]) .header:not(.is-scrolled) .header__logo,
+  :global([data-header="light"]) .header:not(.is-scrolled) .header__nav-link,
+  :global([data-header="light"]) .header:not(.is-scrolled) .header__cta {
+    color: var(--color-fg);
+  }
+
+  :global([data-header="light"]) .header:not(.is-scrolled) .header__cta {
+    border-color: color-mix(in srgb, var(--color-fg) 30%, transparent);
+  }
+
+  :global([data-header="light"]) .header:not(.is-scrolled) .header__cta:hover {
+    background-color: var(--color-fg);
+    color: var(--color-on-dark);
+  }
+
+  :global([data-header="light"])
+    .header:not(.is-scrolled)
+    .header__hamburger-line {
+    background-color: var(--color-fg);
+  }
+
+  /* モバイルメニュー展開中は背面が暗色パネルになるため、
+     data-header="light" のページでもナビ・ハンバーガーは明色に戻す。
+     （上の light 用ルールより詳細度を高くしている） */
+  .header .header__hamburger.is-active .header__hamburger-line,
+  :global([data-header="light"])
+    .header:not(.is-scrolled)
+    .header__hamburger.is-active
+    .header__hamburger-line {
+    background-color: var(--color-on-dark);
+  }
+
+  :global([data-header="light"])
+    .header:not(.is-scrolled)
+    .header__nav.is-open
+    .header__nav-link,
+  :global([data-header="light"])
+    .header:not(.is-scrolled)
+    .header__nav.is-open
+    .header__cta {
+    color: var(--color-on-dark);
+  }
+
+  :global([data-header="light"])
+    .header:not(.is-scrolled)
+    .header__nav.is-open
+    .header__cta {
+    border-color: color-mix(in srgb, var(--color-on-dark) 30%, transparent);
+  }
+</style>
+
+<script>
+  import {
+    gsap,
+    ScrollTrigger,
+    lockScroll,
+    unlockScroll,
+  } from "../scripts/animations";
+
+  const header = document.querySelector<HTMLElement>(".js-header");
+  const hamburger = document.querySelector<HTMLButtonElement>(".js-hamburger");
+  const nav = document.querySelector<HTMLElement>(".js-nav");
+  const progress = document.querySelector<HTMLElement>(".js-progress");
+
+  let menuOpen = false;
+
+  /* --- スクロール状態 + 方向連動の出し入れ ---------------------------------
+     scroll リスナーではなく ScrollTrigger に統合。rAF に同期するので
+     スクロール中のカクつきが出ない。 */
+  if (header) {
+    ScrollTrigger.create({
+      start: 0,
+      end: "max",
+      onUpdate: (self) => {
+        const y = self.scroll();
+
+        header.classList.toggle("is-scrolled", y > 50);
+
+        // メニュー展開中と最上部付近では隠さない
+        const shouldHide = !menuOpen && self.direction === 1 && y > 300;
+        header.classList.toggle("is-hidden", shouldHide);
+      },
+    });
+
+    // キーボードでヘッダー内にフォーカスが来たら必ず見せる
+    header.addEventListener("focusin", () =>
+      header.classList.remove("is-hidden"),
+    );
+  }
+
+  /* --- スクロール進捗バー --- */
+  if (progress) {
+    gsap.to(progress, {
+      scaleX: 1,
+      ease: "none",
+      scrollTrigger: { start: 0, end: "max", scrub: 0.3 },
+    });
+  }
+
+  /* --- モバイルメニュー ---------------------------------------------------
+     パネル本体・ナビ項目のスタガーを GSAP タイムラインで制御する。
+     ハンバーガー → × のモーフは CSS (.is-active) が担当する。 */
+  if (hamburger && nav) {
+    const setExpanded = (open: boolean) => {
+      menuOpen = open;
+      hamburger.classList.toggle("is-active", open);
+      hamburger.setAttribute("aria-expanded", String(open));
+      if (open) {
+        header?.classList.remove("is-hidden");
+        lockScroll();
+      } else {
+        unlockScroll();
+      }
+    };
+
+    const mm = gsap.matchMedia();
+
+    mm.add("(max-width: 900px)", () => {
+      const items = nav.querySelectorAll(".header__nav-item");
+      const cta = nav.querySelector(".header__cta");
+
+      const tl = gsap.timeline({
+        paused: true,
+        onReverseComplete: () => {
+          nav.classList.remove("is-open");
+          gsap.set(nav, { visibility: "hidden" });
+        },
+      });
+
+      tl.set(nav, { visibility: "visible" })
+        .fromTo(
+          nav,
+          { opacity: 0, clipPath: "inset(0 0 100% 0)" },
+          {
+            opacity: 1,
+            clipPath: "inset(0 0 0% 0)",
+            duration: 0.6,
+            ease: "power3.inOut",
+          },
+        )
+        .fromTo(
+          items,
+          { opacity: 0, y: 24 },
+          {
+            opacity: 1,
+            y: 0,
+            stagger: 0.07,
+            duration: 0.5,
+            ease: "power3.out",
+          },
+          "-=0.25",
+        );
+
+      if (cta) {
+        tl.fromTo(
+          cta,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          "-=0.3",
+        );
+      }
+
+      const open = () => {
+        nav.classList.add("is-open");
+        setExpanded(true);
+        tl.play();
+      };
+
+      const close = () => {
+        setExpanded(false);
+        tl.reverse();
+      };
+
+      const onToggle = () => (menuOpen ? close() : open());
+
+      const onKeydown = (e: KeyboardEvent) => {
+        if (e.key === "Escape" && menuOpen) {
+          close();
+          // 閉じたらフォーカスを開閉ボタンに戻す
+          hamburger.focus();
+        }
+      };
+
+      hamburger.addEventListener("click", onToggle);
+      document.addEventListener("keydown", onKeydown);
+
+      // ナビ内のリンクを踏んだらメニューを閉じる（同一ページ内アンカー対策）
+      const onNavClick = (e: Event) => {
+        if ((e.target as HTMLElement).closest("a") && menuOpen) close();
+      };
+      nav.addEventListener("click", onNavClick);
+
+      // 900px を超えたら（デスクトップ表示に戻ったら）状態を完全に戻す
+      return () => {
+        hamburger.removeEventListener("click", onToggle);
+        document.removeEventListener("keydown", onKeydown);
+        nav.removeEventListener("click", onNavClick);
+        if (menuOpen) setExpanded(false);
+        nav.classList.remove("is-open");
+        tl.kill();
+        gsap.set(nav, { clearProps: "all" });
+      };
+    });
+  }
+</script>

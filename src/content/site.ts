@@ -5,6 +5,8 @@
 export type SiteNavItem = {
   label: string;
   href: string;
+  /** English sub-label shown above `label` in the header (e.g. "About"). */
+  labelEn?: string;
 };
 
 /** Optional local-business / MEO data. When present, a LocalBusiness JSON-LD
@@ -43,6 +45,12 @@ export type SiteConfig = {
    *  Drives canonical URLs, sitemap, robots.txt and JSON-LD via Astro.site. */
   url: string;
   name: string;
+  /** English wordmark shown with the logo, in the loader and in the footer
+   *  (e.g. "CAFE HINATA"). */
+  nameEn: string;
+  /** One character used as the logo mark in the header, hero and loader
+   *  (e.g. "陽"). Usually the first or most symbolic character of `name`. */
+  brandMark: string;
   tagline: string;
   description: string;
   locale: string;
@@ -66,6 +74,9 @@ export type SiteConfig = {
    *  if you embed or post to it. */
   contactFormUrl?: string;
   nav: SiteNavItem[];
+  /** The call-to-action button at the right end of the header, and the main
+   *  button of the contact CTA section near the bottom of each page. */
+  cta: SiteNavItem;
   /** Secondary links shown in the footer (policy pages and the like). */
   footerNav?: SiteNavItem[];
   seo: {
@@ -101,8 +112,11 @@ export type SiteConfig = {
 export const site: SiteConfig = {
   // TODO(setup): Q14 公開するURL（未定の間は example.com のままでよい）
   url: "https://example.com",
-  // TODO(setup): Q2 サイト名 / Q3 キャッチコピー・説明文（120字前後）
+  // TODO(setup): Q2 サイト名 / 英字表記（ロゴ横・ローダー・フッター）/ ロゴに使う1文字
+  // TODO(setup): Q3 キャッチコピー・説明文（120字前後）
   name: "サイト名",
+  nameEn: "SITE NAME",
+  brandMark: "灯",
   tagline: "ひとことで伝わるキャッチコピー。",
   description:
     "検索結果やSNSでのシェア時に表示される、サイト全体の説明文です。誰に・何を・どこで提供しているかを120字前後で書きます。",
@@ -139,11 +153,14 @@ export const site: SiteConfig = {
   // TODO(setup): Q7 お問い合わせフォームの外部URL（Googleフォーム等。なければ行ごと削除）
   // contactFormUrl: "https://forms.gle/XXXX",
   // TODO(setup): Q6 ページ構成に合わせてナビを並べる（href は末尾スラッシュなし）
+  // ヘッダーには nav のうち "/" 以外が並ぶ（ホームへはロゴから戻る）。
+  // labelEn は各項目の上に小さく出る英字。フッターには nav 全部が並ぶ。
   nav: [
-    { label: "ホーム", href: "/" },
-    { label: "私たちについて", href: "/about" },
-    { label: "お問い合わせ", href: "/contact" },
+    { label: "ホーム", labelEn: "Home", href: "/" },
+    { label: "私たちについて", labelEn: "About", href: "/about" },
+    { label: "お問い合わせ", labelEn: "Contact", href: "/contact" },
   ],
+  cta: { label: "お問い合わせ", labelEn: "Contact", href: "/contact" },
   footerNav: [{ label: "サイトポリシー", href: "/legal" }],
   seo: {
     ogImage: "/images/og/og-default.jpg",
@@ -153,9 +170,8 @@ export const site: SiteConfig = {
     logo: "/icon-512.png",
     robots:
       "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1",
-    // TODO(setup): Q9 配色を決めたら global.css の --color-bg（ライト/ダーク）と揃える
-    themeColor: "#fbfbf9",
-    themeColorDark: "#14140f",
+    // TODO(setup): Q9 配色を決めたら global.css の --color-bg と揃える
+    themeColor: "#e8e5e1",
     noindexPaths: [],
     // 公開後: Search Console の「HTMLタグ」の content の値
     // googleSiteVerification: "XXXXXXXX",

@@ -1,0 +1,127 @@
+---
+// 数字を大きく並べる罫線グリッド（スクロールで 0 からカウントアップする）。
+// 実績・年数・件数など、利用者から聞いた実数だけを載せること。
+type Stat = { label: string; value: number; unit?: string };
+
+const {
+  items,
+  label,
+  highlightLast = false,
+  class: className,
+} = Astro.props as {
+  items: Stat[];
+  /** dl 全体の読み上げ名（例: "数字で見る〇〇"） */
+  label: string;
+  /** 最後の項目を合計などとして強調する */
+  highlightLast?: boolean;
+  class?: string;
+};
+---
+
+{
+  /*
+  数値は SSR 時点で実数を出力しておき、.anim-on の時だけ JS が 0 に戻して
+  カウントアップさせる。これで JS が動かなくても正しい数字が読める。
+*/
+}
+<dl class:list={["stats", className]} aria-label={label}>
+  {
+    items.map((item, index) => (
+      <div
+        class:list={[
+          "stats__item",
+          { "is-total": highlightLast && index === items.length - 1 },
+        ]}
+      >
+        <dt class="stats__label">{item.label}</dt>
+        <dd class="stats__value">
+          <span class="stats__num" data-count-to={item.value}>
+            {item.value}
+          </span>
+          {item.unit && <span class="stats__unit">{item.unit}</span>}
+        </dd>
+        <span class="stats__index" aria-hidden="true">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  /* 罫線は各セルが持つ。コンテナ背景を透かす方式だと、
+     最終行が埋まらないときに空セルが色ブロックとして見えてしまう */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    border-top: 1px solid var(--color-border);
+    border-left: 1px solid var(--color-border);
+    margin-bottom: 3.5rem;
+  }
+
+  .stats__item {
+    position: relative;
+    background-color: var(--color-bg);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    padding: 2rem 1.5rem 1.75rem;
+    text-align: center;
+  }
+
+  .stats__item.is-total {
+    background-color: var(--color-surface);
+  }
+
+  .stats__label {
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    color: var(--color-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .stats__value {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.3rem;
+    line-height: 1;
+  }
+
+  .stats__num {
+    font-family: var(--font-en);
+    font-size: clamp(2.75rem, 7vw, 3.75rem);
+    font-weight: 300;
+    color: var(--color-fg);
+    /* カウント中に幅が揺れて周囲がガタつくのを防ぐ */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .is-total .stats__num {
+    color: var(--color-accent);
+  }
+
+  .stats__unit {
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+
+  .stats__index {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.9rem;
+    font-family: var(--font-en);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--color-border);
+  }
+
+  @media (max-width: 480px) {
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats__item {
+      padding: 1.5rem 1rem 1.25rem;
+    }
+  }
+</style>

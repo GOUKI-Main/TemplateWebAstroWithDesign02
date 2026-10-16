@@ -1,0 +1,61 @@
+---
+import SectionHeading from "./SectionHeading.astro";
+
+// 下層ページの冒頭（漢字の見出し → ページ名の h1 → 導入文）。
+// 固定ヘッダーの高さ分の余白もここで取る。
+const {
+  kanji,
+  en,
+  title,
+  description,
+  center = false,
+} = Astro.props as {
+  kanji: string;
+  en: string;
+  /** ページの <h1> */
+  title: string;
+  description?: string;
+  center?: boolean;
+};
+---
+
+<div
+  class:list={["page-header container-page page-top", { "is-center": center }]}
+>
+  {/* 漢字は飾り。ページの見出しは h1（title）が担う */}
+  <div aria-hidden="true">
+    <SectionHeading kanji={kanji} en={en} as="h3" />
+  </div>
+  <h1 class="page-header__title fade-in stagger-2">{title}</h1>
+  {
+    description && (
+      <p class="page-header__desc fade-in stagger-3">{description}</p>
+    )
+  }
+  <slot />
+</div>
+
+<style>
+  .page-header {
+    padding-bottom: clamp(2rem, 5vw, 4rem);
+  }
+
+  .page-header.is-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .page-header__title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header__desc {
+    max-width: 48rem;
+    font-size: 1.1rem;
+    color: var(--color-muted);
+    line-height: 1.8;
+  }
+</style>

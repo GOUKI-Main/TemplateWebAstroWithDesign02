@@ -1,0 +1,126 @@
+---
+import { site } from "../content/site";
+import { displayPhone, formatHours } from "../lib/format";
+
+// ページ末尾の行動喚起。ボタンは site.cta、電話は site.business.telephone
+// （設定されている時だけ出る）。
+// TODO(setup): Q11 行動喚起の見出しと案内文（例: 「まずはお気軽にご相談ください。」）
+const {
+  title = "お気軽に、\nご相談ください。",
+  text = `${site.name}へのご質問・ご相談は、お問い合わせページから承っています。`,
+} = Astro.props as {
+  /** 改行は \n で入れる */
+  title?: string;
+  text?: string;
+};
+const tel = site.business?.telephone;
+const hours = site.business?.openingHours?.map(formatHours).join(" / ");
+---
+
+<section class="cta">
+  <div class="container-page cta__container">
+    <div class="cta__inner fade-in">
+      <h2 class="cta__title">
+        {
+          title.split("\n").map((line, i) => (
+            <>
+              {i > 0 && <br />}
+              {line}
+            </>
+          ))
+        }
+      </h2>
+      <p class="cta__text">{text}</p>
+
+      <div class="cta__actions">
+        <a href={site.cta.href} class="btn btn--cta">
+          {site.cta.label}
+          <span class="btn__arrow" aria-hidden="true">→</span>
+        </a>
+
+        {
+          tel && (
+            <div class="cta__tel">
+              <span class="cta__tel-label">お電話でのご相談</span>
+              <a href={`tel:${tel}`} class="cta__tel-number">
+                {displayPhone(tel)}
+              </a>
+              {hours && (
+                <span class="cta__tel-time">（受付時間：{hours}）</span>
+              )}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    background-color: var(--color-surface);
+    padding: clamp(6rem, 12vw, 10rem) 0;
+  }
+
+  .cta__container {
+    max-width: 900px;
+  }
+
+  .cta__inner {
+    text-align: center;
+    background-color: var(--color-bg);
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 6vw, 5rem);
+    border-radius: 4px;
+    box-shadow: 0 10px 40px color-mix(in srgb, var(--color-fg) 5%, transparent);
+  }
+
+  .cta__title {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    margin-bottom: 1.5rem;
+    color: var(--color-fg);
+  }
+
+  .cta__text {
+    font-size: 1rem;
+    color: var(--color-muted);
+    margin-bottom: 3rem;
+  }
+
+  .cta__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+  }
+
+  .cta__tel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .cta__tel-label {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+
+  .cta__tel-number {
+    font-family: var(--font-en);
+    font-size: 2rem;
+    font-weight: 400;
+    color: var(--color-fg);
+    line-height: 1;
+    text-decoration: none;
+    transition: color var(--transition-base);
+  }
+
+  .cta__tel-number:hover {
+    color: var(--color-accent);
+  }
+
+  .cta__tel-time {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+  }
+</style>

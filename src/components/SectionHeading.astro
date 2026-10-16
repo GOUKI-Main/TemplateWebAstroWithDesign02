@@ -1,0 +1,45 @@
+---
+// 漢字1字の大きな見出し + 英字の添え書き（+ 任意で連番とヘアライン）。
+// 見た目は global.css の .section-heading*。
+const {
+  kanji,
+  en,
+  index,
+  as: Tag = "h2",
+  label,
+} = Astro.props as {
+  /** 大きく出す漢字（1〜2字が目安） */
+  kanji: string;
+  /** 添え書きの英字（例: "Concept"） */
+  en: string;
+  /** セクション連番（例: "01"）。指定した時だけヘアライン付きの連番が出る */
+  index?: string;
+  /** 見出し要素のレベル。ページ内で h1 が別にある場合は h2 のまま */
+  as?: "h1" | "h2" | "h3";
+  /** 漢字1字では意味が伝わらないとき、読み上げ用の見出し名（例: "私たちの想い"） */
+  label?: string;
+};
+---
+
+{
+  /* fade-in は付けない。子要素を個別に動かす専用タイムライン（initHeadings）が担当する */
+}
+<div class="section-heading" data-heading>
+  {
+    index && (
+      <span
+        class="section-heading__index"
+        data-heading-index
+        aria-hidden="true"
+      >
+        {index}
+      </span>
+    )
+  }
+  <Tag class="section-heading__kanji" data-heading-kanji aria-label={label}
+    >{kanji}</Tag
+  >
+  <span class="section-heading__en" data-heading-en aria-hidden="true"
+    >({en})</span
+  >
+</div>

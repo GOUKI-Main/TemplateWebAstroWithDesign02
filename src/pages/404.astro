@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import PageHeader from "../components/PageHeader.astro";
 
 const title = "ページが見つかりません";
 const description = "お探しのページは存在しません。";
@@ -10,16 +11,53 @@ const description = "お探しのページは存在しません。";
   description={description}
   canonicalPath="/404"
   robots="noindex,nofollow"
-  mainCentered
 >
-  <article class="prose">
-    <h1>404 — ページが見つかりません</h1>
-    <p class="lead">
-      お探しのページは存在しないか、移動された可能性があります。
-    </p>
+  <PageHeader kanji="無" en="404 Not Found" title={title} center />
 
-    <p>
-      <a href="/">ホームへ戻る</a>
-    </p>
-  </article>
+  <section class="error fade-in stagger-3">
+    <div class="container-page error__container">
+      <div class="error__message">
+        <p>
+          お探しのページは存在しないか、移動された可能性があります。<br />
+          お手数ですが、トップページからお探しください。
+        </p>
+      </div>
+
+      <div class="error__action fade-in stagger-4">
+        <a href="/" class="btn btn--outline">
+          <span class="btn__arrow error__arrow" aria-hidden="true">←</span>
+          トップページへ戻る
+        </a>
+      </div>
+    </div>
+  </section>
 </Base>
+
+<style>
+  .error {
+    padding-bottom: 8rem;
+  }
+
+  .error__container {
+    max-width: 800px;
+    text-align: center;
+  }
+
+  .error__message {
+    background-color: var(--color-surface);
+    padding: clamp(2rem, 6vw, 4rem);
+    border-radius: 4px;
+    margin-bottom: 4rem;
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+
+  .error__action {
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn:hover .error__arrow {
+    transform: translateX(-4px);
+  }
+</style>
