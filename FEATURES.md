@@ -25,7 +25,10 @@
 テンプレート化の際に削除したブログ機能（関連記事・ページネーション・RSS・表の
 横スクロール・ヒーロー画像・タグアーカイブ・ブログ一式）のものです。C6 と
 §3.2-f（セルフホストフォント）は、フォントのライセンス文を同梱する手間を
-なくすため、システムフォントに置き換えたので欠番です。
+なくすため、システムフォントに置き換えたので欠番です（いまは Google Fonts を
+C14 として読み込みます）。B7（`<details>` のモバイルメニュー）と C7（ダーク
+モード）は、デザイン付きテンプレートにした際に GSAP のメニューとライトのみの
+配色に置き換えたので欠番です。
 
 ---
 
@@ -33,40 +36,42 @@
 
 ### 1.1 常設（消す前提がない）
 
-| 機能                                  | 実体                                                                       |
-| ------------------------------------- | -------------------------------------------------------------------------- |
-| タイトル / description / canonical    | `src/components/SEO.astro`、`src/layouts/Base.astro`                       |
-| charset / viewport                    | `src/components/SEO.astro`                                                 |
-| Base レイアウト（head + ページ外枠）  | `src/layouts/Base.astro`                                                   |
-| Header / NavLinks / Footer / ナビ設定 | `src/components/{Header,NavLinks,Footer}.astro`、`site.ts` の `nav`        |
-| 設定の集約（`site.ts`）               | `src/content/site.ts`                                                      |
-| サイトオリジン（`url`→`Astro.site`）  | `site.ts` の `url`、`astro.config.mjs`                                     |
-| URL 正規化（末尾スラッシュなし）      | `astro.config.mjs` の `trailingSlash`、`wrangler.jsonc` の `html_handling` |
-| デザイントークン（`@theme`）          | `src/styles/global.css` の `@theme {`                                      |
-| 共通コンテナ（`container-page`）      | `src/styles/global.css` の `@utility container-page`                       |
-| 横スクロール防止（2層）               | `global.css` の `overflow-wrap: anywhere` と `:where(img, svg, …)`         |
-| 404 ページ                            | `src/pages/404.astro`                                                      |
-| Prettier / TypeScript 設定            | `.prettierrc`、`tsconfig.json`                                             |
+| 機能                                 | 実体                                                                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| タイトル / description / canonical   | `src/components/SEO.astro`、`src/layouts/Base.astro`                                                                                 |
+| charset / viewport                   | `src/components/SEO.astro`                                                                                                           |
+| Base レイアウト（head + ページ外枠） | `src/layouts/Base.astro`                                                                                                             |
+| Header / Footer / ナビ設定           | `src/components/{Header,Footer}.astro`、`site.ts` の `nav` / `cta`                                                                   |
+| デザインの部品                       | `src/components/{Hero,PageHeader,SectionHeading,FullBleedSection,ServiceCard,ContactCTA}.astro`、`global.css` の `@layer components` |
+| 設定の集約（`site.ts`）              | `src/content/site.ts`                                                                                                                |
+| サイトオリジン（`url`→`Astro.site`） | `site.ts` の `url`、`astro.config.mjs`                                                                                               |
+| URL 正規化（末尾スラッシュなし）     | `astro.config.mjs` の `trailingSlash`、`wrangler.jsonc` の `html_handling`                                                           |
+| デザイントークン（`@theme`）         | `src/styles/global.css` の `@theme {`                                                                                                |
+| 共通コンテナ（`container-page`）     | `src/styles/global.css` の `@utility container-page`                                                                                 |
+| 横スクロール防止（2層）              | `global.css` の `overflow-wrap: anywhere` と `:where(img, svg, …)`                                                                   |
+| 404 ページ                           | `src/pages/404.astro`                                                                                                                |
+| Prettier / TypeScript 設定           | `.prettierrc`、`tsconfig.json`                                                                                                       |
 
 > タップ領域（`tap-target`）と本文スタイル（`prose`）も実質は常設です。理由と
 > 「それでも消すなら」は §5-7 / §5-5 に書きました。
 
 ### 1.2 独立して消せる
 
-| #   | 機能                      | 既定 | 実体                                                           | 手順   |
-| --- | ------------------------- | ---- | -------------------------------------------------------------- | ------ |
-| B1  | Cloudflare Web Analytics  | env  | `src/components/Cloudflare.astro`                              | §3.1-a |
-| B2  | Search Console 認証メタ   | env  | `src/components/SEO.astro` の `gscVerification`                | §3.1-b |
-| B3  | リンク先読み（唯一の JS） | ON   | `astro.config.mjs` の `prefetch:`                              | §3.1-c |
-| B4  | FAQ（`<details>`）        | ON   | `src/components/FAQ.astro`                                     | §3.1-d |
-| B7  | モバイルメニュー          | ON   | `src/components/Header.astro` の `<details class="md:hidden">` | §3.1-g |
-| B9  | `robots.txt`              | ON   | `src/pages/robots.txt.ts`                                      | §3.1-i |
-| B10 | LocalBusiness + NAP 表示  | OFF  | `site.ts` の `business:`、`BusinessInfo.astro`、`jsonld.ts`    | §3.1-j |
-| B11 | セキュリティヘッダ        | ON   | `public/_headers`                                              | §3.1-k |
-| B12 | 内部リンク検査            | ON   | `scripts/check-links.mjs`                                      | §3.1-l |
-| B13 | 単体テスト（Vitest）      | ON   | `src/**/*.test.ts`、`vitest.config.ts`                         | §3.1-m |
-| B14 | reduced-motion 対応       | ON   | `src/styles/global.css` の `prefers-reduced-motion`            | §3.1-n |
-| B15 | スキップリンク            | ON   | `src/components/SkipLink.astro`                                | §3.1-o |
+| #   | 機能                     | 既定 | 実体                                                        | 手順   |
+| --- | ------------------------ | ---- | ----------------------------------------------------------- | ------ |
+| B1  | Cloudflare Web Analytics | env  | `src/components/Cloudflare.astro`                           | §3.1-a |
+| B2  | Search Console 認証メタ  | env  | `src/components/SEO.astro` の `gscVerification`             | §3.1-b |
+| B3  | リンク先読み             | ON   | `astro.config.mjs` の `prefetch:`                           | §3.1-c |
+| B4  | FAQ（`<details>`）       | ON   | `src/components/FAQ.astro`                                  | §3.1-d |
+| B16 | 初回ローディング演出     | ON   | `src/components/Loader.astro`、`design.ts` の `loader`      | §3.1-p |
+| B17 | 数字のカウントアップ     | ON   | `src/components/Stats.astro`、`index.astro` の `stats`      | §3.1-q |
+| B9  | `robots.txt`             | ON   | `src/pages/robots.txt.ts`                                   | §3.1-i |
+| B10 | LocalBusiness + NAP 表示 | OFF  | `site.ts` の `business:`、`BusinessInfo.astro`、`jsonld.ts` | §3.1-j |
+| B11 | セキュリティヘッダ       | ON   | `public/_headers`                                           | §3.1-k |
+| B12 | 内部リンク検査           | ON   | `scripts/check-links.mjs`                                   | §3.1-l |
+| B13 | 単体テスト（Vitest）     | ON   | `src/**/*.test.ts`、`vitest.config.ts`                      | §3.1-m |
+| B14 | reduced-motion 対応      | ON   | `src/styles/global.css` の `prefers-reduced-motion`         | §3.1-n |
+| B15 | スキップリンク           | ON   | `src/components/SkipLink.astro`                             | §3.1-o |
 
 ### 1.3 消せるが手当てが要る
 
@@ -77,7 +82,8 @@
 | C3  | サイトマップ                  | ON   | `astro.config.mjs` の `sitemap({`                  | §3.2-c | `robots.txt` の `Sitemap:` 行も |
 | C4  | noindex 制御                  | ON※  | `site.ts` の `noindexPaths`                        | §3.2-d | 判定は共通関数に集約済み        |
 | C5  | theme-color                   | ON   | `SEO.astro` の `theme-color`、`site.ts`            | §3.2-e | webmanifest も同じ値を読む      |
-| C7  | ダークモード                  | ON   | `global.css` の `prefers-color-scheme: dark`       | §3.2-g | `themeColorDark` も一緒に       |
+| C13 | GSAP アニメーション一式       | ON   | `src/scripts/animations.ts`                        | §3.2-m | Header のスクロール・メニューも |
+| C14 | Google Fonts                  | ON   | `src/content/design.ts` の `googleFontsUrl`        | §3.2-n | CSP の許可も                    |
 | C10 | パンくず（表示）              | OFF  | `src/components/Breadcrumbs.astro`                 | §3.2-j | 下層ページ用。現状は未使用      |
 | C12 | JSON-LD 構造化データ          | ON   | `src/lib/seo/jsonld.ts`                            | §3.2-l | パンくず表示は無修正で残せる    |
 
@@ -142,12 +148,6 @@ Analytics、GSC メタ、theme-color、ダークモード。
 2. `src/pages/index.astro` の `import FAQ`、`const faqs = [ … ]`、`<FAQ … />`
    を削除
 
-#### g. モバイルメニュー
-
-`src/components/Header.astro` の `<details class="md:hidden">` 全体を削除し、
-デスクトップ用 `<div class="hidden md:block">` のラッパを外して常時表示に。
-ナビ項目が増えると狭い画面で溢れるので、代替（フッターナビ等）を用意してから。
-
 #### i. `robots.txt`
 
 `src/pages/robots.txt.ts` を削除。noindex は meta 側（§3.2-d）で管理しているので
@@ -184,12 +184,26 @@ Analytics、GSC メタ、theme-color、ダークモード。
 #### n. reduced-motion 対応
 
 `src/styles/global.css` の `@media (prefers-reduced-motion: reduce)` ブロックを
-削除。現状これが効いているのは FAQ の `+` 記号の回転だけです。
+削除。GSAP 側は `animations.ts` と `Base.astro` のインライン script が同じ
+メディアクエリを見て演出を止めるので、こちらを消しても GSAP は止まったままです
+（効かなくなるのはヒーロー写真のズームなど CSS の動きだけ）。
 
 #### o. スキップリンク
 
 `src/components/SkipLink.astro` を削除し、`Base.astro` の import と
 `<SkipLink />` を削除。**アクセシビリティ要件（WCAG 2.4.1）なので非推奨**です。
+
+#### p. 初回ローディング演出
+
+`src/content/design.ts` の `animation.loader` を `false` にするだけで出なく
+なります（ヒーローは即座に再生）。完全に消すなら `src/components/Loader.astro`
+を削除し、`Base.astro` の `import Loader` / `showLoader` / `<Loader />` を削除。
+
+#### q. 数字のカウントアップ
+
+`src/pages/index.astro` の `const stats = […]` と `{/* 04 Numbers */}` の
+セクションを削除し、以降のセクション連番（`index="05"`）を詰める。他で使って
+いなければ `src/components/Stats.astro` も削除。
 
 ---
 
@@ -261,14 +275,24 @@ Analytics、GSC メタ、theme-color、ダークモード。
    `theme_color` / `background_color` に使っている** ので、PWA を残すなら
    リテラルに置き換える
 
-#### g. ダークモード
+#### m. GSAP アニメーション一式
 
-1. `src/styles/global.css`: `@media (prefers-color-scheme: dark) { :root { … } }`
-   を削除し、`color-scheme: light dark` を `light` に変更
-2. `src/content/site.ts`: `seo.themeColorDark` を削除
-3. `src/components/SEO.astro`: `themeColorDark` の props と、2本立ての
-   `theme-color` を単一の `<meta name="theme-color" content={themeColor} />` に
-4. `public/_headers` などに記載はなし
+1. `src/scripts/animations.ts` を削除し、`package.json` から `gsap` を削除
+2. `src/layouts/Base.astro`: 末尾の `<script>`（`initAnimations`）と、head の
+   インライン script（`anim-on` を付けるもの）を削除
+3. `Loader.astro` を §3.1-p の手順で削除
+4. `src/components/Header.astro` の `<script>` を書き直す（スクロール時の
+   `is-scrolled`、モバイルメニューの開閉はこの script が担っている。消すと
+   スマホでナビが開かなくなる）。最小なら `<details>` の開閉に置き換える
+5. `global.css` の Scroll Reveal（`.anim-on …`）は `anim-on` が付かなければ
+   効かないので、残しても害はない
+
+#### n. Google Fonts
+
+`src/content/design.ts` の `googleFontsUrl` を `""` にすると読み込みが止まり、
+`global.css` の `--font-*` に並べたシステムフォントで表示されます。
+`public/_headers` の CSP 雛形から `fonts.googleapis.com` / `fonts.gstatic.com`
+も削除。
 
 #### j. パンくず（表示）
 
@@ -395,13 +419,13 @@ URL がビルド出力に存在するかを照合するようにしました。H
 
 `site.ts` の `seo.themeColor` を読んでいる先が3つあります。
 
-| 読み手                                        | 用途                                      |
-| --------------------------------------------- | ----------------------------------------- |
-| `SEO.astro`                                   | `<meta name="theme-color">`（light/dark） |
-| `site.webmanifest.ts`                         | `theme_color` と `background_color`       |
-| （`global.css` の `--color-bg` と手動で同期） | 実際の背景色                              |
+| 読み手                                        | 用途                                |
+| --------------------------------------------- | ----------------------------------- |
+| `SEO.astro`                                   | `<meta name="theme-color">`         |
+| `site.webmanifest.ts`                         | `theme_color` と `background_color` |
+| （`global.css` の `--color-bg` と手動で同期） | 実際の背景色                        |
 
-「ダークモードを消す」「PWA を消す」「theme-color を消す」の3つが同じ設定値を
+「PWA を消す」「theme-color を消す」の2つが同じ設定値を
 共有しているため、消す範囲が重なります。特に **PWA を残して theme-color だけ
 消す**と `site.webmanifest.ts` が未定義を出力します。
 
@@ -411,17 +435,15 @@ URL がビルド出力に存在するかを照合するようにしました。H
 
 ### 5-5. Typography は実質常設 🟡
 
-`about` / `contact` / `legal` / `404` / `index` がすべて
-`<article class="prose">` で本文を組んでいます。`@tailwindcss/typography` と
-`global.css` の `--tw-prose-*` トークン束ねを消すと、全ページの本文が**素の
-HTML の見た目に戻ります**（ビルドもテストも通るので、目で見るまで気づきません）。
-
-Typography ごと外したい場合は、全ページの本文をユーティリティクラスで
-組み直すのがセットになります。
+デザイン付きの各ページは部品で組んであり、`<article class="prose">` を
+使っているのは `legal` だけです。`@tailwindcss/typography` と `global.css` の
+`--tw-prose-*` トークン束ねを消すと、そのページの本文が**素の HTML の見た目に
+戻ります**（ビルドもテストも通るので、目で見るまで気づきません）。
+外すなら `legal.astro` の本文を独自の `<style>` で組み直すのがセットです。
 
 ### 5-7. `tap-target` の寸法の複製 ✅ 共通化済み
 
-`tap-target` は6ファイル12箇所で使われています。WCAG 2.2 AA（SC 2.5.8）の
+`tap-target` はユーティリティとしては `SkipLink` と `Breadcrumbs` で使い、デザインの部品（`.btn`・`.more-link`・ヘッダーの CTA・フッターのリンク）は同じ `--tap-min` を `min-height` に読んでいます。WCAG 2.2 AA（SC 2.5.8）の
 要件なので消す想定はありません。
 
 寸法とメディアクエリは `:root` の `--tap-min` の1箇所に集約してあります

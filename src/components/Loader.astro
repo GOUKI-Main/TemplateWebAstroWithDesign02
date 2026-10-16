@@ -1,0 +1,185 @@
+---
+import { site } from "../content/site";
+---
+
+{
+  /* トップページの初回訪問時のみ表示（Base.astro が出し分ける）。
+    2回目以降 / reduced-motion は CSS で即 display:none */
+}
+<div class="loader" id="js-loader" aria-hidden="true">
+  <div class="loader__inner">
+    <span class="loader__kanji">{site.brandMark}</span>
+    <span class="loader__wordmark">{site.nameEn}</span>
+    <span class="loader__rule"><i></i></span>
+  </div>
+</div>
+
+<style>
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-bg);
+    /* GSAP がここから inset(0 0 100% 0) へ動かして幕を上げる */
+    clip-path: inset(0 0 0 0);
+  }
+
+  /* JS が動かない・2回目以降・reduced-motion では最初から出さない */
+  :global(html:not(.anim-on)) .loader,
+  :global(html.loader-skip) .loader {
+    display: none;
+  }
+
+  .loader__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0 1.5rem;
+  }
+
+  .loader__kanji {
+    font-family: var(--font-serif);
+    font-size: clamp(3.5rem, 12vw, 6rem);
+    line-height: 1;
+    color: var(--color-fg);
+  }
+
+  .loader__wordmark {
+    font-family: var(--font-en);
+    font-size: clamp(0.75rem, 2.5vw, 0.95rem);
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .loader__rule {
+    display: block;
+    width: clamp(8rem, 30vw, 14rem);
+    height: 1px;
+    background-color: var(--color-border);
+    overflow: hidden;
+  }
+
+  .loader__rule i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+</style>
+
+<script>
+  import gsap from "gsap";
+  import {
+    animationsEnabled,
+    lockScroll,
+    unlockScroll,
+    playHero,
+  } from "../scripts/animations";
+  import { design } from "../content/design";
+
+  const loader = document.getElementById("js-loader");
+  const root = document.documentElement;
+
+  function dismiss() {
+    if (loader) loader.style.display = "none";
+    document.body.removeAttribute("aria-busy");
+  }
+
+  if (loader) {
+    const skip = !animationsEnabled() || root.classList.contains("loader-skip");
+
+    if (skip) {
+      dismiss();
+      void playHero();
+    } else {
+      lockScroll();
+      document.body.setAttribute("aria-busy", "true");
+
+      let finished = false;
+
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+
+        gsap
+          .timeline({
+            onComplete: () => {
+              dismiss();
+              unlockScroll();
+              void playHero();
+            },
+          })
+          // 進捗を一気に詰めてから幕を上げる
+          .to(".loader__rule i", {
+            scaleX: 1,
+            duration: 0.35,
+            ease: "power2.out",
+          })
+          .to(
+            loader,
+            {
+              clipPath: "inset(0 0 100% 0)",
+              duration: 0.9,
+              ease: "power3.inOut",
+            },
+            "+=0.05",
+          );
+      };
+
+      // 導入部：明 → 欧文ロゴ → ヘアラインが 85% まで進む
+      const intro = gsap
+        .timeline()
+        .from(".loader__kanji", {
+          opacity: 0,
+          scale: 1.06,
+          duration: 1,
+          ease: "power3.out",
+        })
+        .from(
+          ".loader__wordmark",
+          {
+            opacity: 0,
+            letterSpacing: "0.6em",
+            duration: 0.9,
+            ease: "power3.out",
+          },
+          "-=0.55",
+        )
+        .to(
+          ".loader__rule i",
+          { scaleX: 0.85, duration: 1.1, ease: "power1.inOut" },
+          "-=0.75",
+        );
+
+      const introDone = new Promise<void>((resolve) => {
+        intro.eventCallback("onComplete", resolve);
+      });
+
+      const pageLoaded = new Promise<void>((resolve) => {
+        if (document.readyState === "complete") resolve();
+        else window.addEventListener("load", () => resolve(), { once: true });
+      });
+
+      // 導入部の完了と実際の読み込み完了、両方が揃ったら幕を上げる
+      void Promise.all([introDone, pageLoaded]).then(finish);
+
+      // 低速回線・読み込みが終わらない場合の打ち切り
+      window.setTimeout(finish, design.animation.loaderTimeout);
+
+      // このセッションでは以降スキップ
+      try {
+        sessionStorage.setItem("loader:seen", "1");
+      } catch {
+        /* プライベートモード等で sessionStorage が使えなくても演出は続行 */
+      }
+    }
+  }
+</script>

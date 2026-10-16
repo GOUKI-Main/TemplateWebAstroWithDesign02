@@ -1,61 +1,68 @@
 ---
 import { site } from "../content/site";
+import { displayPhone, formatAddress, formatHours } from "../lib/format";
 
 // Visible NAP (Name / Address / Phone) for local businesses. Renders only when
 // site.business is set — the same single source that drives the LocalBusiness
 // JSON-LD, so structured data and the visible text always match. (§4 MEO)
 const b = site.business;
-const address = b?.address
-  ? [
-      b.address.streetAddress,
-      b.address.addressLocality,
-      b.address.addressRegion,
-      b.address.postalCode,
-      b.address.addressCountry,
-    ]
-      .filter(Boolean)
-      .join(", ")
-  : null;
+const address = formatAddress(b?.address);
 ---
 
 {
   b && (
-    <section class="not-prose mt-8 text-sm" aria-label="事業者情報">
-      <p class="m-0 font-semibold text-fg">{b.legalName ?? site.name}</p>
-      <dl class="mt-2 grid gap-1 text-muted">
+    <section class="info-card" aria-label="事業者情報">
+      <h2 class="info-card__title">{b.legalName ?? site.name}</h2>
+      <dl class="info-list">
         {address && (
-          <div>
-            <dt class="sr-only">住所</dt>
-            <dd class="m-0">{address}</dd>
+          <div class="info-list__row">
+            <dt>所在地</dt>
+            <dd>{address}</dd>
           </div>
         )}
         {b.telephone && (
-          <div>
-            <dt class="sr-only">電話番号</dt>
-            <dd class="m-0">
-              <a class="tap-target hover:text-link" href={`tel:${b.telephone}`}>
-                {b.telephone}
+          <div class="info-list__row">
+            <dt>電話番号</dt>
+            <dd>
+              <a class="info-list__tel" href={`tel:${b.telephone}`}>
+                {displayPhone(b.telephone)}
               </a>
             </dd>
           </div>
         )}
         {b.openingHours && b.openingHours.length > 0 && (
-          <div>
-            <dt class="sr-only">営業時間</dt>
-            <dd class="m-0">{b.openingHours.join(" · ")}</dd>
+          <div class="info-list__row">
+            <dt>営業時間</dt>
+            <dd>
+              {b.openingHours.map((h, i) => (
+                <>
+                  {i > 0 && <br />}
+                  {formatHours(h)}
+                </>
+              ))}
+            </dd>
+          </div>
+        )}
+        {b.areaServed && b.areaServed.length > 0 && (
+          <div class="info-list__row">
+            <dt>対応エリア</dt>
+            <dd>{b.areaServed.join("・")}</dd>
           </div>
         )}
         {b.hasMap && (
-          <div>
-            <dt class="sr-only">地図</dt>
-            <dd class="m-0">
+          <div class="info-list__row">
+            <dt>地図</dt>
+            <dd>
               <a
-                class="tap-target hover:text-link"
+                class="more-link"
                 href={b.hasMap}
                 target="_blank"
                 rel="noopener"
               >
-                Google マップで見る
+                <span class="more-link__text">Google Map</span>
+                <span class="more-link__arrow" aria-hidden="true">
+                  →
+                </span>
               </a>
             </dd>
           </div>
@@ -64,3 +71,44 @@ const address = b?.address
     </section>
   )
 }
+
+<style>
+  .info-card {
+    background-color: var(--color-surface);
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+    border-radius: 4px;
+  }
+
+  .info-card__title {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .info-list {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .info-list__row {
+    line-height: 1.7;
+  }
+
+  .info-list__row dt {
+    font-weight: 500;
+    color: var(--color-accent);
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .info-list__tel {
+    font-family: var(--font-en);
+    font-size: 1.5rem;
+    color: var(--color-fg);
+  }
+
+  .info-list__tel:hover {
+    color: var(--color-accent);
+  }
+</style>

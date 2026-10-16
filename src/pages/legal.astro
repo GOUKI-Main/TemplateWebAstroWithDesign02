@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import PageHeader from "../components/PageHeader.astro";
 import { site } from "../content/site";
 
 // TODO(setup): Q13 法的表記 — プライバシーポリシー / 特定商取引法に基づく表記
@@ -12,33 +13,60 @@ const title = "サイトポリシー";
   description={`${site.name}のプライバシーポリシーと免責事項です。`}
   canonicalPath="/legal"
 >
-  <article class="prose">
-    <h1>{title}</h1>
+  <PageHeader kanji="約" en="Site Policy" title={title} />
 
-    <h2>プライバシーポリシー</h2>
-    <p>
-      お問い合わせでお預かりした個人情報は、ご返信のためにのみ利用し、法令に基づく場合を除いて第三者に提供しません。
-    </p>
-    <p>
-      当サイトでは、利用状況の把握のためにCookieを使用しないアクセス解析を利用する場合があります。
-    </p>
+  <section class="legal">
+    <div class="container-page">
+      <article class="prose legal__body fade-in stagger-3">
+        <h2>プライバシーポリシー</h2>
+        <p>
+          お問い合わせでお預かりした個人情報は、ご返信のためにのみ利用し、法令に基づく場合を除いて第三者に提供しません。
+        </p>
+        <p>
+          当サイトでは、利用状況の把握のためにCookieを使用しないアクセス解析を利用する場合があります。
+        </p>
 
-    <h2>免責事項</h2>
-    <p>
-      当サイトの情報は正確さに努めていますが、その内容を保証するものではありません。掲載内容は予告なく変更・削除する場合があります。
-    </p>
+        <h2>免責事項</h2>
+        <p>
+          当サイトの情報は正確さに努めていますが、その内容を保証するものではありません。掲載内容は予告なく変更・削除する場合があります。
+        </p>
 
-    {
-      site.author.email && (
-        <>
-          <h2>お問い合わせ窓口</h2>
-          <p>
-            {site.business?.legalName ?? site.name}（{site.author.name}）
-            <br />
-            <a href={`mailto:${site.author.email}`}>{site.author.email}</a>
-          </p>
-        </>
-      )
-    }
-  </article>
+        {
+          site.author.email && (
+            <>
+              <h2>お問い合わせ窓口</h2>
+              <p>
+                {site.business?.legalName ?? site.name}（{site.author.name}）
+                <br />
+                <a href={`mailto:${site.author.email}`}>{site.author.email}</a>
+              </p>
+            </>
+          )
+        }
+      </article>
+    </div>
+  </section>
 </Base>
+
+<style>
+  .legal {
+    padding-bottom: 8rem;
+  }
+
+  .legal__body {
+    max-width: 800px;
+    background-color: var(--color-surface);
+    padding: clamp(2rem, 5vw, 4rem);
+    border-radius: 4px;
+  }
+
+  .legal__body :global(h2) {
+    font-weight: 500;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .legal__body :global(h2:first-child) {
+    margin-top: 0;
+  }
+</style>

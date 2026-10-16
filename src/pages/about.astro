@@ -1,25 +1,251 @@
 ---
 import Base from "../layouts/Base.astro";
+import PageHeader from "../components/PageHeader.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import FullBleedSection from "../components/FullBleedSection.astro";
 import BusinessInfo from "../components/BusinessInfo.astro";
+import ContactCTA from "../components/ContactCTA.astro";
 import { site } from "../content/site";
 
-// TODO(setup): Q11 「私たちについて」— 想い・経歴・代表あいさつ・沿革など
+// TODO(setup): Q10 代表あいさつの背景写真（人物写真より、店内・作業風景などが合う）
+import messageImage from "../assets/images/concept.png";
+
+// TODO(setup): Q11 「私たちについて」— 想い・選ばれる理由・代表あいさつ・沿革など
 const title = "私たちについて";
 const description = `${site.name}について。私たちの想いと、大切にしていることをご紹介します。`;
+
+const intro = {
+  title: "私たちの想い",
+  paragraphs: [
+    `${site.name}は、〇〇のために〇〇を提供しています。`,
+    "はじめた理由や、お客様に約束していることをここに書きます。",
+    "地域やお客様との関わり、これから目指すことなどを書きます。",
+  ],
+};
+
+const reasons = [
+  {
+    number: "01",
+    title: "強み1の見出し",
+    description: "強み1の具体的な説明をここに書きます。",
+  },
+  {
+    number: "02",
+    title: "強み2の見出し",
+    description: "強み2の具体的な説明をここに書きます。",
+  },
+  {
+    number: "03",
+    title: "強み3の見出し",
+    description: "強み3の具体的な説明をここに書きます。",
+  },
+  {
+    number: "04",
+    title: "強み4の見出し",
+    description: "強み4の具体的な説明をここに書きます。",
+  },
+];
+
+const message = {
+  title: "代表あいさつ",
+  body: `${site.author.name}からのメッセージをここに書きます。どんな想いで仕事をしているのか、お客様にどうなってほしいのかを、話し言葉に近い文章で書くと伝わります。`,
+  role: "代表",
+  name: site.author.name,
+};
 ---
 
 <Base title={title} description={description} canonicalPath="/about">
-  <article class="prose">
-    <h1>{title}</h1>
+  <PageHeader kanji="志" en="About Us" title={title} />
 
-    <p class="lead">{site.name}は、〇〇のために〇〇を提供しています。</p>
+  {/* Intro */}
+  <section class="section intro">
+    <div class="container-page intro__container">
+      <div class="intro__inner fade-in stagger-3">
+        <h2 class="intro__title">{intro.title}</h2>
+        <div class="intro__text">
+          {intro.paragraphs.map((p) => <p>{p}</p>)}
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <h2>私たちの想い</h2>
-    <p>はじめた理由や、お客様に約束していることをここに書きます。</p>
+  {/* Reasons */}
+  <section class="section reasons" id="reasons">
+    <div class="container-page">
+      <div class="heading-center">
+        <SectionHeading kanji="選" en="Reasons" label="選ばれる理由" />
+      </div>
 
-    <h2>代表あいさつ</h2>
-    <p>{site.author.name}からのメッセージをここに書きます。</p>
+      <div class="reasons__grid">
+        {
+          reasons.map((item, index) => (
+            <div class={`reason-card fade-in stagger-${(index % 4) + 1}`}>
+              <span class="reason-card__num" aria-hidden="true">
+                {item.number}
+              </span>
+              <h3 class="reason-card__title">{item.title}</h3>
+              <p class="reason-card__desc">{item.description}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
 
-    <BusinessInfo />
-  </article>
+  {/* Message (FullBleed) */}
+  <FullBleedSection
+    image={messageImage}
+    kanji="声"
+    en="Message"
+    label={message.title}
+    largeText="Message"
+  >
+    <div class="message">
+      <h3 class="message__title fade-in">{message.title}</h3>
+      <p class="message__body" data-split-lines>{message.body}</p>
+
+      <div class="message__profile fade-in stagger-2">
+        <p class="message__role">{message.role}</p>
+        <p class="message__name">{message.name}</p>
+      </div>
+    </div>
+  </FullBleedSection>
+
+  {
+    site.business && (
+      <section class="section business">
+        <div class="container-page business__container fade-in">
+          <BusinessInfo />
+        </div>
+      </section>
+    )
+  }
+
+  <ContactCTA />
 </Base>
+
+<style>
+  /* Intro */
+  .intro {
+    padding-top: 0;
+  }
+
+  .intro__container {
+    max-width: 800px;
+  }
+
+  .intro__inner {
+    text-align: center;
+  }
+
+  .intro__title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--color-accent);
+  }
+
+  .intro__text {
+    font-size: 1.1rem;
+    line-height: 2;
+    text-align: left;
+  }
+
+  .intro__text p {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Reasons */
+  .reasons {
+    background-color: var(--color-surface);
+  }
+
+  .heading-center {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4rem;
+  }
+
+  .reasons__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3rem;
+  }
+
+  .reason-card {
+    background-color: var(--color-bg);
+    padding: 3rem 2.5rem;
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--color-fg) 3%, transparent);
+  }
+
+  .reason-card__num {
+    position: absolute;
+    top: -1.5rem;
+    left: 2rem;
+    font-family: var(--font-en);
+    font-size: 4rem;
+    color: var(--color-cta);
+    opacity: 0.3;
+    line-height: 1;
+    font-weight: 300;
+  }
+
+  .reason-card__title {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .reason-card__desc {
+    color: var(--color-muted);
+    line-height: 1.7;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Message */
+  .message__title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .message__body {
+    font-size: 1.05rem;
+    line-height: 2;
+    margin-bottom: 3rem;
+  }
+
+  .message__profile {
+    border-top: 1px solid
+      color-mix(in srgb, var(--color-on-dark) 30%, transparent);
+    padding-top: 1.5rem;
+  }
+
+  .message__role {
+    font-size: 0.9rem;
+    color: var(--color-cta);
+    margin-bottom: 0.5rem;
+  }
+
+  .message__name {
+    font-size: 1.5rem;
+    font-family: var(--font-serif);
+  }
+
+  /* Business */
+  .business {
+    padding-top: 0;
+  }
+
+  .business__container {
+    max-width: 800px;
+  }
+
+  @media (max-width: 900px) {
+    .reasons__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -5,11 +5,13 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SkipLink from "../components/SkipLink.astro";
 import Cloudflare from "../components/Cloudflare.astro";
+import Loader from "../components/Loader.astro";
 // The breadcrumb item shape is owned by the component that renders it, not by
 // the JSON-LD builder that also happens to consume it — so structured data can
 // be removed without breaking the visible trail.
 import type { BreadcrumbItem } from "../components/Breadcrumbs.astro";
 import { site } from "../content/site";
+import { design } from "../content/design";
 import { siteGraph } from "../lib/seo/jsonld";
 import { isNoindexPath } from "../lib/noindex";
 
@@ -32,7 +34,10 @@ export type Props = {
   breadcrumbs?: BreadcrumbItem[];
   /** Extra JSON-LD nodes appended to the page @graph (e.g. FAQPage). */
   jsonLd?: JsonLd | JsonLd[];
-  mainCentered?: boolean;
+  /** The page opens with a full-screen photo (<Hero>): the fixed header starts
+   *  transparent with light text. Without it the header starts with dark text
+   *  on the page background. Either way it turns dark once you scroll. */
+  hero?: boolean;
 };
 
 const {
@@ -45,8 +50,11 @@ const {
   article,
   breadcrumbs,
   jsonLd,
-  mainCentered = false,
+  hero = false,
 } = Astro.props;
+
+// The opening loader plays on the home page only, once per browser session.
+const showLoader = design.animation.loader && canonicalPath === "/";
 
 // astro.config.mjs always sets `site` (from site.url in site.ts).
 const base = Astro.site!.toString();
@@ -77,7 +85,7 @@ const robots =
     ? "noindex,nofollow"
     : site.seo.robots);
 
-// <body> below takes its height from dvh, never the vh-based min-height
+// <body> takes its height from dvh, never the vh-based min-height
 // utility: on mobile browsers 100vh measures the viewport as if the URL bar
 // were hidden, so a short page leaves the footer pushed below the fold until
 // you scroll. dvh tracks the visible height.
@@ -126,21 +134,68 @@ const graph = siteGraph({
       article={article}
       jsonLd={graph}
     />
+    {
+      design.fonts.googleFontsUrl && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+          <link rel="stylesheet" href={design.fonts.googleFontsUrl} />
+        </>
+      )
+    }
     <Cloudflare />
+
+    {
+      /* アニメーションの起動フラグ。リビール要素の「素の状態」は可視で、
+         .anim-on が付いた時だけ伏せられる。この script が動かない環境では
+         何も伏せられず、全文がそのまま読める。GSAP の読み込みに失敗した
+         場合も、タイマーで伏せた要素を全部表示に戻す。 */
+    }
+    <script is:inline define:vars={{ fallbackTimeout: 6000 }}>
+      (function () {
+        var root = document.documentElement;
+        var reduced = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+
+        root.classList.add(reduced ? "anim-off" : "anim-on");
+
+        try {
+          if (sessionStorage.getItem("loader:seen")) {
+            root.classList.add("loader-skip");
+          }
+        } catch (e) {
+          root.classList.add("loader-skip");
+        }
+
+        window.setTimeout(function () {
+          if (root.hasAttribute("data-anim-ready")) return;
+          root.classList.remove("anim-on");
+          root.classList.remove("is-locked");
+          var loader = document.getElementById("js-loader");
+          if (loader) loader.style.display = "none";
+          if (document.body) document.body.removeAttribute("aria-busy");
+        }, fallbackTimeout);
+      })();
+    </script>
   </head>
 
-  <body class="flex min-h-dvh flex-col bg-bg font-sans text-fg antialiased">
+  <body
+    class="flex min-h-dvh flex-col bg-bg font-sans text-fg antialiased"
+    data-header={hero ? undefined : "light"}
+  >
+    {showLoader && <Loader />}
     <SkipLink />
     <Header />
-    <main
-      id="main"
-      class:list={[
-        "container-page flex-1 py-10",
-        { "grid place-items-center": mainCentered },
-      ]}
-    >
+    <main id="main" class="flex-1">
       <slot />
     </main>
     <Footer />
+
+    <script>
+      import { initAnimations } from "../scripts/animations";
+
+      void initAnimations();
+    </script>
   </body>
 </html>

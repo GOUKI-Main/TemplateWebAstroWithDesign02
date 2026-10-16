@@ -11,6 +11,8 @@ const base = "https://example.com/";
 const testSite: SiteConfig = {
   url: "https://example.com",
   name: "Test Site",
+  nameEn: "TEST SITE",
+  brandMark: "T",
   tagline: "tagline",
   description: "description",
   locale: "ja",
@@ -23,6 +25,7 @@ const testSite: SiteConfig = {
     socials: { x: "https://x.com/author" },
   },
   nav: [],
+  cta: { label: "Contact", href: "/contact" },
   seo: {
     logo: "/icon-512.png",
     robots: "index,follow",

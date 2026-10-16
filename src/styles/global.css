@@ -12,56 +12,80 @@
 @source not "../**/*.test.ts";
 
 /* Design tokens — single source for colors & fonts. Exposed as CSS variables
-   AND as Tailwind utilities (bg-bg, text-fg, text-muted, border-border, …).
-   These are the LIGHT values; the dark overrides live below.
-   TODO(setup): Q9 配色 — ライト/ダーク両方の値と site.ts の themeColor* を揃える */
+   (component <style> blocks read var(--color-*)) AND as Tailwind utilities
+   (bg-bg, text-fg, text-muted, border-border, bg-surface, text-link, …).
+   和モダン（オフホワイト × 深緑 × 生成りベージュ）の配色。
+   TODO(setup): Q9 配色 — 値を差し替えたら site.ts の themeColor も揃える */
 @theme {
-  --color-bg: #fbfbf9;
-  --color-fg: #1a1a1a;
-  --color-muted: #5b5b5b;
-  --color-link: #0b3d91;
-  --color-border: rgba(0, 0, 0, 0.12);
-  --color-surface: #f2f2ee;
+  /* 面 */
+  --color-bg: #e8e5e1; /* メイン背景（オフホワイト） */
+  --color-surface: #f5f3f0; /* 一段明るい面（カード・交互セクション） */
+  --color-dark: #263430; /* 暗い面（スクロール後のヘッダー・モバイルメニュー） */
+  /* 文字 */
+  --color-fg: #263430; /* 本文 */
+  --color-muted: #6b7b75; /* 補助文字 */
+  --color-on-dark: #fafaf8; /* 暗い面・写真の上の文字 */
+  /* アクセント */
+  --color-accent: #3a6b5c; /* 深緑。リンク・強調・フォーカスリング */
+  --color-accent-light: #5a9b88; /* スクロール進捗バー */
+  --color-link: var(--color-accent);
+  --color-cta: #c8b89a; /* 主ボタンの面（生成りベージュ） */
+  --color-cta-hover: #b8a88a;
+  --color-cta-fg: #263430;
+  /* 線 */
+  --color-border: #d1ccc6;
+  /* LINE のブランド色（問い合わせページの LINE ボタン） */
+  --color-line: #06c755;
+  --color-line-hover: #05ae4a;
 
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
 }
 
-/* System fonts only: nothing to download, nothing to license, no layout
-   shift. Latin falls to the OS UI face; Japanese is named explicitly so
-   Windows/Android don't pick an older CJK face over the modern one. */
+/* Fonts — Google Fonts (URL は src/content/design.ts、読み込みは Base.astro)。
+   読み込めない環境でも崩れないよう、末尾に同系統のシステムフォントを並べる。
+   書体を変えるときは design.ts の URL とここの family 名を一緒に変える。 */
 @theme {
+  /* 本文（ゴシック） */
   --font-sans:
-    system-ui, -apple-system, "Segoe UI", "Hiragino Sans",
-    "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic",
-    Meiryo, sans-serif;
+    "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  /* 見出し（明朝） */
+  --font-serif:
+    "Shippori Mincho", "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho",
+    serif;
+  /* 欧文のアクセント（ナビの英字・数字・電話番号） */
+  --font-en: "Cormorant Garamond", "Times New Roman", serif;
 }
 
-/* Dark mode: OS preference only — no toggle, so no runtime JavaScript and no
-   flash of the wrong theme. Utilities compile to var(--color-*), so
-   redefining the variables here re-themes every utility at once.
-   Keep `theme-color` in src/content/site.ts in sync with --color-bg. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #14140f;
-    --color-fg: #ecece6;
-    --color-muted: #a3a39c;
-    --color-link: #9dbcff;
-    --color-border: rgba(255, 255, 255, 0.16);
-    --color-surface: #1e1e18;
-  }
-}
-
-/* Tell the UA which palettes exist so form controls, scrollbars and the
-   default canvas follow along. */
+/* Non-color design values. Plain :root, not @theme, so they don't compile
+   into utilities nobody should reach for directly. */
 :root {
-  color-scheme: light dark;
+  --section-padding: clamp(5rem, 10vw, 10rem);
+  --section-padding-x: clamp(1.5rem, 5vw, 6rem);
+  --container-max: 1200px;
+  /* 写真の上に敷く暗幕（--color-dark を 55%） */
+  --overlay: color-mix(in srgb, var(--color-dark) 55%, transparent);
+
+  /* GSAP 側の power3.out と揃えたイージング */
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --transition-base: 0.35s var(--ease-out);
+  --transition-slow: 0.7s var(--ease-out);
+
+  /* 和紙のような極薄ノイズ（画像を増やさずに紙の質感を出す） */
+  --texture-washi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
 
-/* Tailwind Typography ships its own gray ramp, which would leave Markdown
-   body copy a different color from the rest of the site. Bind it to the
-   design tokens instead, so prose follows light/dark automatically.
+/* Light only. The palette is a single, deliberate light design; there is no
+   dark variant. (ダークモードを足すなら @media (prefers-color-scheme: dark)
+   で上の --color-* を全部差し替え、site.ts に themeColorDark を戻す) */
+:root {
+  color-scheme: light;
+}
+
+/* Tailwind Typography ships its own gray ramp, which would leave body copy a
+   different color from the rest of the site. Bind it to the design tokens.
    Unlayered, so it wins over the `prose` utility's own variables. */
 .prose {
   --tw-prose-body: var(--color-fg);
@@ -84,6 +108,91 @@
   --tw-prose-td-borders: var(--color-border);
 }
 
+/* ─── Base ─────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Fixed header: keep in-page anchor targets visible below it. */
+    scroll-padding-top: 5.5rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* スクロールロック（ローダー展開中 / モバイルメニュー展開中） */
+  html.is-locked,
+  html.is-locked body {
+    overflow: hidden;
+  }
+
+  body {
+    position: relative;
+    font-family: var(--font-sans);
+    color: var(--color-fg);
+    background-color: var(--color-bg);
+    line-height: 1.8;
+    font-weight: 400;
+    /* clip, not hidden: hidden would turn body into a scroll container. The
+       drifting large text and parallax images are already clipped by their
+       own sections; this is only the last line of defence. */
+    overflow-x: clip;
+    /* 和文の詰め組み。字間が間延びして見えるのを抑える */
+    font-feature-settings:
+      "palt" 1,
+      "kern" 1;
+    /* 日本語の禁則処理を厳格に */
+    line-break: strict;
+  }
+
+  /* 和紙質感のオーバーレイ。全面に極薄で乗せる（クリックは透過） */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: var(--texture-washi);
+    opacity: 0.028;
+  }
+
+  /* 全称の a:hover { opacity: .7 } は使わない。一律に薄くなると全リンクが
+     同じ表情になり安く見えるため、ホバーは各コンポーネントで色・下線として
+     表現する。 */
+  a {
+    transition: color var(--transition-base);
+  }
+
+  /* コンポーネント側のスタイルを持たない素のリンクだけの控えめなフォールバック */
+  a:not([class]):hover {
+    color: var(--color-accent);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+    text-wrap: balance;
+  }
+
+  /* キーボード操作時のみリングを出す */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
 /* A long URL, hash or identifier must never push the page sideways on a
    phone — a horizontally scrolling body is the single most common mobile
    defect. `anywhere`, not `break-word`: per CSS Text 3 only `anywhere`
@@ -102,15 +211,6 @@ body {
    (a wide <table>, a code block) belongs in its own `overflow-x: auto` box. */
 :where(img, svg, video, canvas, iframe, embed, object) {
   max-width: 100%;
-}
-
-/* Sticky header: keep in-page anchor targets visible below it. The header is
-   a single row at every breakpoint (the mobile menu is a disclosure, not a
-   second row), but that row is ~77px once `tap-target` gives it a 44px child
-   on touch: 2rem of py-4 + 2.75rem + 1px border. 5.5rem leaves ~11px of
-   clearance — grow this if the header ever gains height. */
-html {
-  scroll-padding-top: 5.5rem;
 }
 
 /* The minimum interactive target size, defined once.
@@ -146,7 +246,8 @@ html {
   min-width: var(--tap-min);
 }
 
-/* Respect a reduced-motion preference for the few transitions we ship. */
+/* Respect a reduced-motion preference. The GSAP layer checks the same query
+   and never starts; this covers the CSS transitions and keyframes. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -158,10 +259,262 @@ html {
   }
 }
 
-/* Shared centered content column (header inner, main, footer inner). */
+/* Shared centered content column. */
 @utility container-page {
   margin-inline: auto;
   width: 100%;
-  max-width: 900px;
-  padding-inline: 1.5rem;
+  max-width: var(--container-max);
+  padding-inline: var(--section-padding-x);
+}
+
+/* ─── Components ──────────────────────────────────────────────────────────
+   サイト全体で使い回す部品。ページ固有の見た目は各 .astro の <style> に置く。 */
+@layer components {
+  .section {
+    padding-block: var(--section-padding);
+  }
+
+  /* --- Section Heading（漢字1字 + 英字。src/components/SectionHeading.astro） */
+  .section-heading {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  /* 連番 + ヘアライン（和モダンの定番の見出し罫）。index prop がある時だけ出る。
+     単一ルートを保つため flex-basis:100% で改行させる */
+  .section-heading__index {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-en);
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    color: var(--color-muted);
+    margin-bottom: -0.25rem;
+  }
+
+  .section-heading__index::after {
+    content: "";
+    display: block;
+    width: clamp(2.5rem, 6vw, 5rem);
+    height: 1px;
+    background-color: var(--color-border);
+    transform-origin: left center;
+    /* 既定は 1（= 全長表示）。GSAP がこの変数を 0 → 1 に動かして罫線を伸ばす */
+    transform: scaleX(var(--rule-scale, 1));
+  }
+
+  .section-heading__kanji {
+    font-family: var(--font-serif);
+    font-size: clamp(3rem, 6vw, 5rem);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.05em;
+  }
+
+  .section-heading__en {
+    font-family: var(--font-en);
+    font-size: 0.95rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    color: var(--color-muted);
+    padding-top: 0.5rem;
+  }
+
+  /* 縦書き */
+  .vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: var(--font-serif);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    letter-spacing: 0.3em;
+    line-height: 1.8;
+  }
+
+  /* --- Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: var(--tap-min);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 1rem 2.5rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    text-decoration: none;
+  }
+
+  .btn--cta {
+    background-color: var(--color-cta);
+    color: var(--color-cta-fg);
+  }
+
+  .btn--cta:hover {
+    background-color: var(--color-cta-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--color-cta) 30%, transparent);
+  }
+
+  .btn--outline {
+    background-color: transparent;
+    color: var(--color-fg);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn--outline:hover {
+    background-color: var(--color-fg);
+    color: var(--color-on-dark);
+  }
+
+  /* 写真・暗い面の上で使う白抜きの枠線ボタン */
+  .btn--outline-light {
+    background-color: transparent;
+    color: var(--color-on-dark);
+    border: 1px solid color-mix(in srgb, var(--color-on-dark) 50%, transparent);
+  }
+
+  .btn--outline-light:hover {
+    background-color: var(--color-on-dark);
+    color: var(--color-fg);
+  }
+
+  .btn--dark {
+    background-color: var(--color-dark);
+    color: var(--color-on-dark);
+  }
+
+  .btn--dark:hover {
+    background-color: color-mix(in srgb, var(--color-dark) 80%, black);
+  }
+
+  .btn__arrow {
+    transition: transform var(--transition-base);
+    font-size: 1.1em;
+  }
+
+  .btn:hover .btn__arrow {
+    transform: translateX(4px);
+  }
+
+  /* --- More Link（英字 + 下線が伸びるテキストリンク） */
+  .more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: var(--tap-min);
+    font-family: var(--font-en);
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    position: relative;
+    padding-bottom: 0.5rem;
+  }
+
+  .more-link::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: currentColor;
+    transform: scaleX(0.6);
+    transform-origin: left;
+    transition: transform var(--transition-base);
+  }
+
+  .more-link:hover::after,
+  a:hover .more-link::after {
+    transform: scaleX(1);
+  }
+
+  .more-link__arrow {
+    transition: transform var(--transition-base);
+  }
+
+  .more-link:hover .more-link__arrow,
+  a:hover .more-link__arrow {
+    transform: translateX(6px);
+  }
+
+  /* --- 下層ページの共通ヘッダー余白（固定ヘッダーの高さ分を空ける） */
+  .page-top {
+    padding-top: calc(80px + clamp(4rem, 8vw, 6rem));
+  }
+}
+
+/* ─── Scroll Reveal ─────────────────────────────────────────────────────
+   重要: リビール要素の「素の状態」は必ず可視。
+   JS が生きていることを確認できたときだけ <html> に .anim-on が付き、
+   そこで初めて非表示にする。GSAP の読み込み失敗・JS 無効・
+   prefers-reduced-motion のいずれでも全文が読める状態が保たれる。
+   実際の動きは src/scripts/animations.ts (GSAP ScrollTrigger) が担当し、
+   .stagger-N は遅延の指定としてスクリプト側から読み取られる。
+
+   使えるクラス / 属性:
+     .fade-in / .fade-in-left / .fade-in-right  下・左・右からフェードイン
+     .stagger-1〜4                               遅延（0.09秒刻み）
+     .mask-reveal                                画像を上から幕を開けるように表示
+     data-split-lines                            段落を1行ずつせり上げる
+     data-parallax="12"                          背景画像のパララックス（%）
+     data-drift="6"                              大きな英字が横に流れる（%）
+     data-count-to="120"                         数字のカウントアップ
+   ────────────────────────────────────────────────────────────────────── */
+.anim-on .fade-in,
+.anim-on .fade-in-left,
+.anim-on .fade-in-right {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* GSAP がリビールを終えた要素は will-change を解除する */
+.anim-on .is-revealed {
+  will-change: auto;
+}
+
+/* 見出しは子要素を個別に動かすため、.anim-on の時だけ中身を伏せる */
+.anim-on [data-heading] > * {
+  opacity: 0;
+}
+
+/* マスクリビール（画像用）。素の状態は全面表示 */
+.mask-reveal {
+  clip-path: inset(0 0 0 0);
+}
+
+.anim-on .mask-reveal {
+  clip-path: inset(0 0 100% 0);
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+
+  .section-heading {
+    gap: 1rem;
+  }
+
+  .section-heading__kanji {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    padding: 0.8rem 1.8rem;
+    font-size: 0.85rem;
+  }
 }

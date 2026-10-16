@@ -1,8 +1,13 @@
-# TemplateWebAstro
+# TemplateWebAstro (with design)
 
-A boring, production-ready Astro **website template** — HTML-first, ~2 kB of
-runtime JavaScript, and wired for marketing/SEO out of the box. Static pages
+A production-ready Astro **website template with a finished design** —
+和モダン (off-white × deep green × warm beige, Mincho headings) with GSAP
+scroll animations, and wired for marketing/SEO out of the box. Static pages
 only: there is no blog.
+
+> デザインは、デモサイト（学習塾「明光学舎」）の見た目・配色・書体・
+> アニメーションをそのまま汎用化したものです。中身は仮の文章になっていて、
+> 初期セットアップの質問に答えると置き換わります。
 
 ## Make a site from this template (日本語)
 
@@ -119,17 +124,20 @@ Never put a real secret in this file.
 - Placeholder pages (home, about, contact, site policy, 404) filled in by the
   setup interview; FAQ via native `<details>`; visible NAP from
   `site.business`
+- Designed sections: full-screen hero, numbered kanji section headings,
+  vertical-text concept block, full-bleed photo sections with parallax,
+  service cards, count-up numbers, FAQ, contact CTA, opening loader
 
 **Performance & a11y**
 
-- ~2 kB of runtime JS (link prefetching only — see [Runtime
-  JavaScript](#runtime-javascript)); system fonts only — no web-font
-  download, no font license to ship
+- Animations are progressive enhancement — see [Runtime
+  JavaScript](#runtime-javascript); Google Fonts (Shippori Mincho / Noto Sans
+  JP / Cormorant Garamond) with system-font fallbacks
 - Long-term immutable caching for hashed assets (`public/_headers` →
   `/_astro/*`)
-- Dark mode from the OS preference, no toggle and no flash of the wrong theme
-- Semantic HTML; skip link; `aria-current` on active nav/crumb; JS-free mobile
-  menu (`<details>`); `prefers-reduced-motion` respected
+- Light theme only (the design is a single deliberate palette)
+- Semantic HTML; skip link; `aria-current` on active nav/crumb; content stays
+  readable with JS off; `prefers-reduced-motion` turns every animation off
 - Mobile-hardened: no horizontal page scroll at 320px, 44px touch targets on
   touch devices, `dvh` viewport units — see [Mobile](#mobile)
 
@@ -184,18 +192,25 @@ Four rules keep it that way — break one and the phone layout goes with it:
    the viewport as if the URL bar were hidden, which leaves the footer below the
    fold on short pages.
 
-4. **The mobile menu is a `<details>` disclosure** with `max-h-[75dvh]` and its
-   own scroll, so a long nav stays usable on a short or landscape screen.
+4. **The mobile menu is a full-screen panel** (`100dvh`, own scroll), opened by
+   the hamburger button and animated by GSAP; Escape closes it and returns
+   focus to the button.
 
 ## Runtime JavaScript
 
-One module, ~2.3 kB, on every page: Astro's link prefetcher
-(`prefetch: { prefetchAll: true, defaultStrategy: "hover" }` in
-`astro.config.mjs`). Nothing else ships JS — the mobile menu, the FAQ and dark
-mode are all CSS/HTML.
+Two things ship JS:
 
-Delete the `prefetch` block for a strictly zero-JS build, or keep the runtime
-and opt individual links in with `data-astro-prefetch`.
+1. Astro's link prefetcher (`prefetch` in `astro.config.mjs`, ~2.3 kB).
+2. **GSAP + ScrollTrigger + SplitText** (`src/scripts/animations.ts`, plus the
+   scripts in `Header.astro` and `Loader.astro`): the opening loader, hero
+   timeline, scroll reveals, parallax, count-up, the scroll-aware header and
+   the mobile menu. Timing values live in `src/content/design.ts`.
+
+The animation layer is progressive enhancement: elements are visible by
+default and are only hidden once an inline script adds `html.anim-on`. With
+JS off, `prefers-reduced-motion: reduce`, or GSAP failing to load (a 6 s
+fallback timer removes `anim-on`), every word is still on the page. The FAQ
+stays a native `<details>`.
 
 ## Styling (Tailwind 4)
 
@@ -204,54 +219,55 @@ inside an `@theme` block and become **both** CSS variables and utilities:
 
 ```css
 @theme {
-  --color-bg: #fbfbf9; /* -> bg-bg / text-bg / border-bg ... */
-  --color-fg: #1a1a1a;
-  --color-link: #0b3d91;
+  --color-bg: #e8e5e1; /* -> bg-bg / var(--color-bg) */
+  --color-fg: #263430;
+  --color-accent: #3a6b5c;
 }
 ```
 
-**Use only these tokens** (`bg-bg`, `text-fg`, `text-muted`, `border-border`,
-`bg-surface`, `text-link`). A raw hex or a stock Tailwind color like
-`text-gray-700` will not follow dark mode.
+Components are styled in their own `<style>` blocks with `var(--color-*)`;
+shared parts (`.btn`, `.section-heading`, `.more-link`, reveal classes) live in
+`global.css`. **Use only the tokens** — a raw hex or a stock Tailwind color
+like `text-gray-700` won't follow a palette change. Translucent variants are
+`color-mix(in srgb, var(--color-…) N%, transparent)`.
 
-### Dark mode
-
-Driven purely by `prefers-color-scheme`: the media query redefines the same
-`--color-*` variables, so every utility re-themes at once. No toggle, no
-`localStorage`, no inline script, and therefore no flash of the wrong theme.
-`<meta name="theme-color">` is emitted twice (light/dark) from
-`site.seo.themeColor` / `themeColorDark` — keep those in sync with `--color-bg`.
+There is no dark mode: the design is a single light palette.
+`site.seo.themeColor` should match `--color-bg`.
 
 ### Page copy
 
 `@tailwindcss/typography` styles page copy via `<article class="prose">`, and its
 `--tw-prose-*` variables are bound to the design tokens in `global.css` — so
 long-form copy is exactly the same color as the rest of the site, in both
-themes. Preflight replaces a hand-written reset.
+pages. Preflight replaces a hand-written reset. Only the site policy page uses
+`prose`; the designed pages use their own components.
 
 ## 日本語フォント
 
-No web font is bundled: `--font-sans` in `global.css` is a system stack
-(`Hiragino Sans`, `Noto Sans JP`, `Yu Gothic`, `Meiryo`, …), so there is
-nothing to download and no font license to distribute. If typography must be
-identical across devices, add a font through Astro's Fonts API (`fonts` in
-`astro.config.mjs` + `<Font>` in `SEO.astro`) and ship its license file
-(e.g. SIL OFL) next to the font files.
+Fonts load from Google Fonts (URL in `src/content/design.ts`): Shippori
+Mincho for headings (`--font-serif`), Noto Sans JP for body (`--font-sans`),
+Cormorant Garamond for Latin accents (`--font-en`). Each token ends in a
+system-font fallback, so setting the URL to `""` still looks right. If you
+enable the CSP in `public/_headers`, allow `fonts.googleapis.com` /
+`fonts.gstatic.com` (already written into the template line).
 
 ## Project structure
 
 ```
 src/
-├─ components/   Header, NavLinks, Footer, SEO, SkipLink, Cloudflare,
-│                Breadcrumbs, FAQ, BusinessInfo
-├─ content/      site.ts (config)
+├─ components/   Header, Footer, Loader, Hero, PageHeader, SectionHeading,
+│                FullBleedSection, ServiceCard, Stats, ContactCTA, FAQ,
+│                BusinessInfo, SEO, SkipLink, Cloudflare, Breadcrumbs
+├─ content/      site.ts (config), design.ts (fonts URL + animation timing)
 ├─ layouts/      Base.astro (head + JSON-LD graph + shell)
 ├─ lib/          seo/jsonld.ts (graph builders), noindex.ts (path match
-│                shared by meta robots + sitemap) — each with a *.test.ts
+│                shared by meta robots + sitemap), format.ts (address /
+│                phone / hours display) — each with a *.test.ts
+├─ scripts/      animations.ts (GSAP layer)
 ├─ pages/        index, about, contact, legal, 404,
 │                robots.txt, site.webmanifest
-├─ assets/       fonts/ (and images/ for your photos — optimized at build)
-└─ styles/       global.css (@theme tokens, dark mode, prose bindings)
+├─ assets/       images/ (placeholder photos — replace; optimized at build)
+└─ styles/       global.css (@theme tokens, shared parts, reveal classes)
 
 scripts/         check-links.mjs (internal link check over dist/),
                  check-setup.mjs (template placeholders left),
